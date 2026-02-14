@@ -1,84 +1,40 @@
 const fs = require("fs");
 const readline = require("readline");
 
-// Clear screen
-function clear() {
-    process.stdout.write("\x1Bc");
-}
+const clear = () => process.stdout.write("\x1Bc");
 
-// Convert char → 8 bits
-function ASCII(c) {
-    const val = c.charCodeAt(0);
-    const bits = [];
-    for (let i = 7; i >= 0; i--) {
-        bits.push((val >> i) & 1);
-    }
-    return bits;
-}
+const ASCII = c => [...c].map(ch =>
+    [...Array(8)].map((_, i) => (ch.charCodeAt(0) >> (7 - i)) & 1)
+).flat();
 
-function charToBits(ch) {
-    return ASCII(ch);
-}
-
-// Read a line from stdin
-function inputLine(prompt = "") {
-    return new Promise(resolve => {
-        const rl = readline.createInterface({
-            input: process.stdin,
-            output: process.stdout
-        });
-        rl.question(prompt, answer => {
-            rl.close();
-            resolve(answer);
-        });
-    });
-}
+const ask = q => new Promise(res => {
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    rl.question(q, ans => { rl.close(); res(ans); });
+});
 
 async function run(program) {
-    let memory = {};      // sparse tape
-    let ip = 0;
-    let buffer = [];
+    let mem = {}, ip = 0, buf = [];
     clear();
 
-    const progLen = program.length;
-
-    while (ip >= 0 && ip < progLen) {
+    while (ip >= 0 && ip < program.length) {
         let [bit, loc] = program[ip];
 
-        // Write bit and maybe output a byte
-        memory[ip] = bit;
-        buffer.push(String(bit));
+        mem[ip] = bit;
+        buf.push(bit);
 
-        if (buffer.length === 8) {
-            const char = String.fromCharCode(parseInt(buffer.join(""), 2));
-            process.stdout.write(char);
-            buffer = [];
+        if (buf.length === 8) {
+            process.stdout.write(String.fromCharCode(parseInt(buf.join(""), 2)));
+            buf = [];
         }
 
-        // Conditional jump + input hijack
-        if (memory[loc] === bit) {
-            const userInput = (await inputLine("")).trim();
+        if (mem[loc] === bit) {
+            const inp = (await ask("")).trim();
+            const bits = inp ? ASCII(inp) : Array(8).fill(0);
 
-            let bits;
-            if (userInput.length > 0) {
-                bits = [];
-                for (const ch of userInput) {
-                    bits.push(...charToBits(ch));
-                }
-            } else {
-                bits = Array(8).fill(0);
-            }
-
-            // Overwrite A with first bit
-            memory[ip] = bits[0];
-
-            // Store remaining bits starting at loc
-            for (let offset = 1; offset < bits.length; offset++) {
-                memory[loc + offset - 1] = bits[offset];
-            }
+            mem[ip] = bits[0];
+            for (let i = 1; i < bits.length; i++) mem[loc + i - 1] = bits[i];
         }
 
-        // Jump
         ip = loc;
     }
 }
@@ -87,34 +43,22 @@ async function repl() {
     while (true) {
         clear();
         console.log("BitLoc REPL");
-        const fileName = (await inputLine("Enter File (or press Enter to quit): ")).trim();
+        const file = (await ask("Enter File (or Enter to quit): ")).trim();
+        if (!file) return console.log("Exiting REPL.");
 
-        if (!fileName) {
-            console.log("Exiting REPL.");
-            break;
-        }
-
-        let program;
         try {
-            const lines = fs.readFileSync(fileName, "utf8").trim().split("\n");
-            program = lines.map(line => {
-                const [a, b] = line.trim().split(/\s+/);
-                return [parseInt(a), parseInt(b)];
-            });
-        } catch (err) {
-            console.log("Error reading file:", err.message);
-            await inputLine("Press Enter to continue: ");
-            continue;
-        }
+            const program = fs.readFileSync(file, "utf8")
+                .trim()
+                .split("\n")
+                .map(l => l.trim().split(/\s+/).map(Number));
 
-        clear();
-        try {
+            clear();
             await run(program);
-        } catch (err) {
-            console.log("\nError during execution:", err.message);
+        } catch (e) {
+            console.log("Error:", e.message);
         }
 
-        await inputLine("Enter to Continue REPL: ");
+        await ask("\nEnter to Continue REPL: ");
     }
 }
 
