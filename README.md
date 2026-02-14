@@ -1,50 +1,42 @@
-# RPL Interpreter
+# BL Interpreter
 
-RPL (Ripple) Is a open source programming language designed to be  minimalistic (6 Commands, if you count [] as one command) but turing complete
+BL (BitLoc) Is a open source OISC **(one instructoin set computer)** programing langauge
 
----
-
-## Syntax
-
-RPL programs are plain text files ending in `.rpl`.  
-Here are all the commands:
-
-| Command | Meaning                                                                 |
-|---------|-------------------------------------------------------------------------|
-| `R`     | Move pointer **right** (creates new cell if needed).                    |
-| `L`     | Move pointer **left** (creates new cell if needed).                     |
-| `C`     | Increment current cell value (wraps at 255 → 0).                        |
-| `I`     | Input: read one character from stdin into current cell.                 |
-| `P`     | Print current cell as ASCII character.                                  |
-| `[`     | Loop start: if current cell is zero, skip forward to matching `]`.      |
-| `]`     | Loop end: if current cell is nonzero, jump back to matching `[`.        |
-| `#`     | Comment: ignores everything until end of line.                          |
-| `#!`    | Shebang: optional, skips first line if present (Unix‑style script use). |
-
----
 
 ## Getting Ready
 
-### Windows
-1. Install [MinGW](http://mingw.org/) or another GCC toolchain.
-2. Compile the interpreter:
-```powershell gcc .\RPL.c -o rpl.exe```
-3. Run a program:
-```rpl .\hello.rpl```
-### Linux / MacOS
-1. Make sure GCC or Clang is installed.
-2. Compile the interpreter:
-```gcc RPL.c -o rpl```
-3. Run a program:
-```./rpl name.rpl```
+## Run Program (Node):
+```
+node BitLoc.js Project.bl
+```
+(or you can do ``node BitLoc.js`` and enter your file from there)
+## Run Program (Python):
+```
+python BitLoc.js
+```
+### Programing in BitLoc
 
-## System Wide setup
-Windows: Add rpl.exe to your PATH and associate .rpl files with it.
+BitLoc Progarms are text files (in demostratoins though, its .bl)
+the interpreter checks this for every line of code:
 
-Linux/macOS: Move rpl to /usr/local/bin and optionally add a shebang (#!/usr/local/bin/rpl) to .rpl files.
+Read bit and loc
 
-Then you can run .rpl files directly
+Write bit to mem[ip]
+
+Add bit to output buffer
+
+If 8 bits collected → print ASCII
+
+If mem[loc] === bit → trigger input
+
+Convert input to ASCII bits
+
+Overwrite memory with those bits
+
+Jump to loc
+
+... And Repeat
 
 ## License
-This project is released under the MIT License (or your choice).
-RPL is intended as a joke language — use it for fun, **not** production.
+This project is released under the MIT License.
+BitLoc is intended as a joke language,  use it for fun, **not** production.
